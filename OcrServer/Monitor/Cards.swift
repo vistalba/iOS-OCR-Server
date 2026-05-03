@@ -114,10 +114,13 @@ struct MemoryCard: View {
                         .font(.headline)
                     if let s = current {
                         let used = s.memoryUsed.bytesHumanReadable
+                        let available = s.memoryFree.bytesHumanReadable
                         let total = s.memoryTotal.bytesHumanReadable
                         ProgressView(value: Double(s.memoryUsed), total: Double(s.memoryTotal))
                         HStack {
                             Text("Used: \(used)")
+                            Spacer()
+                            Text("Available: \(available)")
                             Spacer()
                             Text("Total: \(total)")
                         }

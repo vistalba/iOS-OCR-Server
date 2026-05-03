@@ -171,7 +171,8 @@ extension SystemMonitor {
         return usages
     }
 
-    /// Memory (aggregate) using host_statistics64(vm_statistics64)
+    /// Memory (aggregate) using a user-facing "used / available" definition.
+    /// "Available" treats inactive pages as reclaimable cache alongside free pages.
     func readMemory() -> MemoryInfo {
         var size = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.stride / MemoryLayout<integer_t>.stride)
         var vmStats = vm_statistics64()
@@ -187,16 +188,15 @@ extension SystemMonitor {
         }
 
         let pageSize = UInt64(vm_kernel_page_size)
-        _ = (UInt64(vmStats.free_count) + UInt64(vmStats.speculative_count)) * pageSize
-        let active = UInt64(vmStats.active_count) * pageSize
-        let inactive = UInt64(vmStats.inactive_count) * pageSize
-        let wired = UInt64(vmStats.wire_count) * pageSize
-        let compressed = UInt64(vmStats.compressor_page_count) * pageSize
-        let used = active + inactive + wired + compressed
         let total = ProcessInfo.processInfo.physicalMemory
-        let clampedUsed = min(used, total)
-        let clampedFree = total > clampedUsed ? total - clampedUsed : 0
-        return MemoryInfo(used: clampedUsed, free: clampedFree, total: total)
+        let free = UInt64(vmStats.free_count) * pageSize
+        let inactive = UInt64(vmStats.inactive_count) * pageSize
+
+        // speculative_count is already included in free_count per Apple's headers.
+        let available = min(free + inactive, total)
+        let used = total - available
+
+        return MemoryInfo(used: used, free: available, total: total)
     }
 
     /// Disk (available, total) via URLResourceValues
