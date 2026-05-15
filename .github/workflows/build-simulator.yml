@@ -29,6 +29,6 @@ jobs:
             -sdk iphonesimulator \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            OTHER_SWIFT_FLAGS='$(inherited) -I $(BUILD_DIR)/../../../swift-log/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)' \
+            OTHER_SWIFT_FLAGS='$(inherited) -I $(BUILD_DIR)/../../swift-log/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)' \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
