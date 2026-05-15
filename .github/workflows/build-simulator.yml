@@ -23,12 +23,6 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: Show all destinations for scheme
-        run: |
-          xcodebuild -showdestinations \
-            -project OcrServer.xcodeproj \
-            -scheme OcrServer 2>&1
-
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
@@ -36,6 +30,5 @@ jobs:
             -project OcrServer.xcodeproj \
             -scheme OcrServer \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
