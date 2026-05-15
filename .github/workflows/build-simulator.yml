@@ -20,20 +20,17 @@ jobs:
       - name: Select Xcode 16.4
         run: sudo xcode-select -s /Applications/Xcode_16.4.app || true
 
-      - name: Show Xcode version
-        run: xcodebuild -version
-
-      - name: List available simulators
-        run: xcrun simctl list devices available 2>&1 | head -30
+      - name: Show Xcode version and SDK
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks 2>&1 | grep -i simulator
 
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -target OcrServer \
+            -scheme OcrServer \
             -sdk iphonesimulator \
-            ARCHS=arm64 \
-            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
