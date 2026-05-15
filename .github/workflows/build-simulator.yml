@@ -23,12 +23,25 @@ jobs:
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
+          # Collect all SPM packages from Package.resolved
+          PACKAGES=$(grep '"identity"' OcrServer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | sed 's/.*"identity" : "\(.*\)",/\1/')
+          
+          # Build -I flags for all packages (they all sit in checkouts/ parallel to each other)
+          # BUILD_DIR for an SPM target = checkouts/<pkg>/build/
+          # checkouts/<dep>/build/<config><platform> is at ../../<dep>/build/... relative to BUILD_DIR
+          IFLAGS=""
+          for pkg in $PACKAGES; do
+            IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
+          done
+          
+          echo "Using IFLAGS: $IFLAGS"
+          
           xcodebuild build \
             -project OcrServer.xcodeproj \
             -target OcrServer \
             -sdk iphonesimulator \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            OTHER_SWIFT_FLAGS='$(inherited) -I $(BUILD_DIR)/../../swift-log/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) -I $(BUILD_DIR)/../../swift-service-context/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)' \
+            OTHER_SWIFT_FLAGS="\$(inherited) $IFLAGS" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
