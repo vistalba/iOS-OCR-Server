@@ -19,28 +19,19 @@ jobs:
 
       - name: Select Xcode
         run: |
-          ls /Applications | grep Xcode
           sudo xcode-select -s /Applications/Xcode_16.3.app || \
           sudo xcode-select -s /Applications/Xcode_16.app || true
 
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: Resolve SPM dependencies
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -project OcrServer.xcodeproj \
-            -scheme OcrServer \
-            -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache"
-
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -scheme OcrServer \
+            -target OcrServer \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache" \
+            -parallelizeTargets NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
