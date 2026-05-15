@@ -20,29 +20,23 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
 
+      - name: Create and verify simulator
+        run: |
+          UDID=$(xcrun simctl create "CI-Phone" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro com.apple.CoreSimulator.SimRuntime.iOS-18-5)
+          echo "Created device: $UDID"
+          echo "DEVICE_UDID=$UDID" >> $GITHUB_ENV
+          echo "DEVICE_NAME=CI-Phone" >> $GITHUB_ENV
+          # List available destinations for this project
+          echo "=== Destinations ==="
+          xcodebuild -showdestinations -project OcrServer.xcodeproj -scheme OcrServer -sdk iphonesimulator 2>&1 || true
+
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
-          # Collect all SPM packages from Package.resolved
-          PACKAGES=$(grep '"identity"' .package.resolved 2>/dev/null || grep '"identity"' OcrServer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | sed 's/.*"identity" : "\(.*\)",/\1/')
-          
-          # Build flags for ALL package build directories
-          # For Swift modules: -I $(BUILD_DIR)/../../<pkg>/build/<config><platform>
-          # For C modulemaps: -Xcc -I$(BUILD_DIR)/../../<pkg>/build/GeneratedModuleMaps-<platform>
-          IFLAGS=""
-          for pkg in $PACKAGES; do
-            IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
-            IFLAGS="$IFLAGS -Xcc -I\$(BUILD_DIR)/../../$pkg/build/GeneratedModuleMaps-\$(EFFECTIVE_PLATFORM_NAME)"
-          done
-          
-          echo "Using IFLAGS for $PACKAGES packages"
-          
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -target OcrServer \
+            -scheme OcrServer \
             -sdk iphonesimulator \
-            ARCHS=arm64 \
-            ONLY_ACTIVE_ARCH=YES \
-            OTHER_SWIFT_FLAGS="\$(inherited) $IFLAGS" \
+            -destination "platform=iOS Simulator,name=$DEVICE_NAME" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
