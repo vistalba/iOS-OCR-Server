@@ -20,43 +20,21 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
 
-      - name: Resolve packages and collect C module map paths
-        run: |
-          set -x
-          xcodebuild -resolvePackageDependencies \
-            -project OcrServer.xcodeproj \
-            -scheme OcrServer 2>&1
-
-          # Find SourcePackages checkouts dir
-          SP=$(ls -d ~/Library/Developer/Xcode/DerivedData/*/SourcePackages 2>/dev/null | head -1)
-          CHK="$SP/checkouts"
-          
-          if [ -d "$CHK" ]; then
-            # Find all C module.modulemap files - these are in the source that won't be deleted
-            FMAPS=$(find "$CHK" -name 'module.modulemap' -path '*/include/*' 2>/dev/null)
-            FFLAGS=""
-            for f in $FMAPS; do
-              FFLAGS="$FFLAGS -Xcc -fmodule-map-file=$f"
-            done
-            echo "Module map flags: $FFLAGS"
-            echo "$FFLAGS" > /tmp/spm_c_module_flags.txt
-          fi
-
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           PACKAGES=$(grep '"identity"' OcrServer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | sed 's/.*"identity" : "\(.*\)",/\1/')
           
+          # Build swift IFLAGS
           IFLAGS=""
           for pkg in $PACKAGES; do
             IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
           done
           
-          # Add absolute module map paths (won't be deleted since they're in source, not build dirs)
-          CFLAGS=$(cat /tmp/spm_c_module_flags.txt 2>/dev/null || echo "")
+          OTHER_FLAGS="\$(inherited) $IFLAGS"
           
-          OTHER_FLAGS="\$(inherited) $IFLAGS $CFLAGS"
-          
+          # Build in background, watching for GeneratedModuleMaps dirs
+          set +o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
             -target OcrServer \
@@ -65,4 +43,28 @@ jobs:
             ONLY_ACTIVE_ARCH=YES \
             OTHER_SWIFT_FLAGS="$OTHER_FLAGS" \
             CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" 2>&1
+            DEVELOPMENT_TEAM="" 2>&1 &
+          XB_PID=$!
+          
+          # Watch for GeneratedModuleMaps directories and populate them
+          sleep 15  # Wait for DerivedData to be set up
+          while kill -0 $XB_PID 2>/dev/null; do
+            # Find any GeneratedModuleMaps directories
+            for dir in $(find ~/Library/Developer/Xcode/DerivedData -path '*/checkouts/*/build/GeneratedModuleMaps-*' -type d 2>/dev/null); do
+              # Find C module maps in source
+              CHK=$(echo "$dir" | sed 's|/build/GeneratedModuleMaps-.*||')
+              SRC_DIR="${CHK%/*}"  # Go up from e.g. console-kit to checkouts  
+              for mm in $(find "$SRC_DIR" -name 'module.modulemap' -path '*/include/*' 2>/dev/null); do
+                MODULE=$(basename $(dirname $(dirname "$mm")))
+                TARGET="$dir/${MODULE}.modulemap"
+                if [ ! -e "$TARGET" ]; then
+                  ln -sf "$mm" "$TARGET" 2>/dev/null || cp "$mm" "$TARGET" 2>/dev/null || true
+                fi
+              done
+            done
+            sleep 3
+          done
+          
+          wait $XB_PID
+          set -o pipefail
+          exit $?
