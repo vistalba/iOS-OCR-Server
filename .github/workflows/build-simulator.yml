@@ -20,29 +20,41 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
 
-      - name: Resolve packages and collect module maps
+      - name: Resolve packages and prepare GeneratedModuleMaps
         run: |
           set -x
           xcodebuild -resolvePackageDependencies \
             -project OcrServer.xcodeproj \
             -scheme OcrServer 2>&1
 
-          # Find the DerivedData SourcePackages directory
-          DD=~/Library/Developer/Xcode/DerivedData
-          SP=$(ls -d "$DD"/*/SourcePackages 2>/dev/null | head -1)
-          echo "SourcePackages path: $SP"
-
-          if [ -n "$SP" ] && [ -d "$SP/checkouts" ]; then
-            # Find all module.modulemap files and collect their include dirs
-            MODULE_MAP_FLAGS=""
-            while IFS= read -r mm; do
-              INC_DIR=$(dirname "$mm")
-              MODULE_MAP_FLAGS="$MODULE_MAP_FLAGS -Xcc -I\"$INC_DIR\""
-            done < <(find "$SP/checkouts" -name 'module.modulemap' -path '*/include/*' 2>/dev/null)
-            echo "Module map flags: $MODULE_MAP_FLAGS"
-            echo "$MODULE_MAP_FLAGS" > /tmp/spm_cflags.txt
-          else
-            echo "No SourcePackages found" > /tmp/spm_cflags.txt
+          # Find SourcePackages checkouts dir
+          SP=$(ls -d ~/Library/Developer/Xcode/DerivedData/*/SourcePackages 2>/dev/null | head -1)
+          CHK="$SP/checkouts"
+          echo "Checkouts dir: $CHK"
+          
+          if [ -d "$CHK" ]; then
+            # Find all module.modulemap files from C targets
+            maps=($(find "$CHK" -path '*/Sources/*/include/module.modulemap' 2>/dev/null))
+            echo "Found ${#maps[@]} C module maps"
+            
+            # For each module map, extract module name and symlink into ALL packages' GeneratedModuleMaps
+            for mm in "${maps[@]}"; do
+              echo "Processing: $mm"
+              # Extract module name from the directory containing the source
+              MODULE_DIR=$(echo "$mm" | sed 's|.*/Sources/\(.*\)/include/module\.modulemap|\1|')
+              MODULE_NAME="${MODULE_DIR##*/}"  # Get last component
+              echo "Module: $MODULE_NAME"
+              
+              # Create symlinks in ALL packages' GeneratedModuleMaps dirs
+              for pkg_dir in "$CHK"/*/; do
+                pkg=$(basename "$pkg_dir")
+                GENDIR="${pkg_dir}build/GeneratedModuleMaps-iphonesimulator"
+                mkdir -p "$GENDIR"
+                ln -sf "$mm" "$GENDIR/${MODULE_NAME}.modulemap"
+              done
+            done
+            
+            echo "Done setting up GeneratedModuleMaps"
           fi
 
       - name: Build for iOS Simulator
@@ -55,9 +67,7 @@ jobs:
             IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
           done
           
-          CFLAGS=$(cat /tmp/spm_cflags.txt 2>/dev/null || echo "")
-          
-          OTHER_FLAGS="\$(inherited) $IFLAGS $CFLAGS"
+          OTHER_FLAGS="\$(inherited) $IFLAGS"
           
           xcodebuild build \
             -project OcrServer.xcodeproj \
