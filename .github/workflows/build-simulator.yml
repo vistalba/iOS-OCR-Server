@@ -20,7 +20,7 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
 
-      - name: Resolve packages and prepare GeneratedModuleMaps
+      - name: Resolve packages and collect C module map paths
         run: |
           set -x
           xcodebuild -resolvePackageDependencies \
@@ -30,31 +30,16 @@ jobs:
           # Find SourcePackages checkouts dir
           SP=$(ls -d ~/Library/Developer/Xcode/DerivedData/*/SourcePackages 2>/dev/null | head -1)
           CHK="$SP/checkouts"
-          echo "Checkouts dir: $CHK"
           
           if [ -d "$CHK" ]; then
-            # Find all module.modulemap files from C targets
-            maps=($(find "$CHK" -path '*/Sources/*/include/module.modulemap' 2>/dev/null))
-            echo "Found ${#maps[@]} C module maps"
-            
-            # For each module map, extract module name and symlink into ALL packages' GeneratedModuleMaps
-            for mm in "${maps[@]}"; do
-              echo "Processing: $mm"
-              # Extract module name from the directory containing the source
-              MODULE_DIR=$(echo "$mm" | sed 's|.*/Sources/\(.*\)/include/module\.modulemap|\1|')
-              MODULE_NAME="${MODULE_DIR##*/}"  # Get last component
-              echo "Module: $MODULE_NAME"
-              
-              # Create symlinks in ALL packages' GeneratedModuleMaps dirs
-              for pkg_dir in "$CHK"/*/; do
-                pkg=$(basename "$pkg_dir")
-                GENDIR="${pkg_dir}build/GeneratedModuleMaps-iphonesimulator"
-                mkdir -p "$GENDIR"
-                ln -sf "$mm" "$GENDIR/${MODULE_NAME}.modulemap"
-              done
+            # Find all C module.modulemap files - these are in the source that won't be deleted
+            FMAPS=$(find "$CHK" -name 'module.modulemap' -path '*/include/*' 2>/dev/null)
+            FFLAGS=""
+            for f in $FMAPS; do
+              FFLAGS="$FFLAGS -Xcc -fmodule-map-file=$f"
             done
-            
-            echo "Done setting up GeneratedModuleMaps"
+            echo "Module map flags: $FFLAGS"
+            echo "$FFLAGS" > /tmp/spm_c_module_flags.txt
           fi
 
       - name: Build for iOS Simulator
@@ -67,7 +52,10 @@ jobs:
             IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
           done
           
-          OTHER_FLAGS="\$(inherited) $IFLAGS"
+          # Add absolute module map paths (won't be deleted since they're in source, not build dirs)
+          CFLAGS=$(cat /tmp/spm_c_module_flags.txt 2>/dev/null || echo "")
+          
+          OTHER_FLAGS="\$(inherited) $IFLAGS $CFLAGS"
           
           xcodebuild build \
             -project OcrServer.xcodeproj \
