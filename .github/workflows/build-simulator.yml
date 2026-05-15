@@ -40,6 +40,9 @@ jobs:
             -sdk iphonesimulator \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache"
 
+      - name: List available simulators
+        run: xcrun simctl list devices available 2>&1 | head -20
+
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
@@ -47,7 +50,7 @@ jobs:
             -project OcrServer.xcodeproj \
             -scheme OcrServer \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -destination 'generic/platform=iOS Simulator' \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
