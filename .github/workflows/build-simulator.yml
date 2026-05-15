@@ -23,11 +23,26 @@ jobs:
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
+          # Collect all SPM packages from Package.resolved
+          PACKAGES=$(grep '"identity"' .package.resolved 2>/dev/null || grep '"identity"' OcrServer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | sed 's/.*"identity" : "\(.*\)",/\1/')
+          
+          # Build flags for ALL package build directories
+          # For Swift modules: -I $(BUILD_DIR)/../../<pkg>/build/<config><platform>
+          # For C modulemaps: -Xcc -I$(BUILD_DIR)/../../<pkg>/build/GeneratedModuleMaps-<platform>
+          IFLAGS=""
+          for pkg in $PACKAGES; do
+            IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
+            IFLAGS="$IFLAGS -Xcc -I\$(BUILD_DIR)/../../$pkg/build/GeneratedModuleMaps-\$(EFFECTIVE_PLATFORM_NAME)"
+          done
+          
+          echo "Using IFLAGS for $PACKAGES packages"
+          
           xcodebuild build \
-            -workspace OcrServer.xcodeproj/project.xcworkspace \
-            -scheme OcrServer \
+            -project OcrServer.xcodeproj \
+            -target OcrServer \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,id=B6925D84-723C-4966-9F12-5570B9217301' \
-            IPHONEOS_DEPLOYMENT_TARGET=18.6 \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
+            OTHER_SWIFT_FLAGS="\$(inherited) $IFLAGS" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
