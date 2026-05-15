@@ -20,48 +20,27 @@ jobs:
       - name: Select Xcode
         run: |
           ls /Applications | grep Xcode
-          sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.app || true
+          sudo xcode-select -s /Applications/Xcode_16.3.app || \
+          sudo xcode-select -s /Applications/Xcode_16.app || true
 
       - name: Show Xcode version
         run: xcodebuild -version
-
-      - name: Show build settings
-        run: |
-          xcodebuild -showBuildSettings \
-            -project OcrServer.xcodeproj \
-            -scheme OcrServer \
-            -sdk iphonesimulator 2>&1 | head -40
 
       - name: Resolve SPM dependencies
         run: |
           xcodebuild -resolvePackageDependencies \
             -project OcrServer.xcodeproj \
             -scheme OcrServer \
-            -sdk iphonesimulator \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache"
-
-      - name: List available runtimes and simulators
-        run: |
-          echo "=== Xcode runtimes ==="
-          xcrun xcodebuild -downloadPlatform iOS Simulator -list 2>&1 || true
-          echo "=== Simulators ==="
-          xcrun simctl list runtimes 2>&1
-          xcrun simctl list devices available 2>&1
 
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -target OcrServer \
+            -scheme OcrServer \
             -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: ~/Library/Logs/DiagnosticReports/
