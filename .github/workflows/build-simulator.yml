@@ -17,54 +17,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || true
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available simulators
+        run: xcrun simctl list devices available 2>&1 | head -30
 
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
-          PACKAGES=$(grep '"identity"' OcrServer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | sed 's/.*"identity" : "\(.*\)",/\1/')
-          
-          # Build swift IFLAGS
-          IFLAGS=""
-          for pkg in $PACKAGES; do
-            IFLAGS="$IFLAGS -I \$(BUILD_DIR)/../../$pkg/build/\$(CONFIGURATION)\$(EFFECTIVE_PLATFORM_NAME)"
-          done
-          
-          OTHER_FLAGS="\$(inherited) $IFLAGS"
-          
-          # Build in background, watching for GeneratedModuleMaps dirs
-          set +o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
             -target OcrServer \
             -sdk iphonesimulator \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            OTHER_SWIFT_FLAGS="$OTHER_FLAGS" \
             CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" 2>&1 &
-          XB_PID=$!
-          
-          # Watch for GeneratedModuleMaps directories and populate them
-          sleep 15  # Wait for DerivedData to be set up
-          while kill -0 $XB_PID 2>/dev/null; do
-            # Find any GeneratedModuleMaps directories
-            for dir in $(find ~/Library/Developer/Xcode/DerivedData -path '*/checkouts/*/build/GeneratedModuleMaps-*' -type d 2>/dev/null); do
-              # Find C module maps in source
-              CHK=$(echo "$dir" | sed 's|/build/GeneratedModuleMaps-.*||')
-              SRC_DIR="${CHK%/*}"  # Go up from e.g. console-kit to checkouts  
-              for mm in $(find "$SRC_DIR" -name 'module.modulemap' -path '*/include/*' 2>/dev/null); do
-                MODULE=$(basename $(dirname $(dirname "$mm")))
-                TARGET="$dir/${MODULE}.modulemap"
-                if [ ! -e "$TARGET" ]; then
-                  ln -sf "$mm" "$TARGET" 2>/dev/null || cp "$mm" "$TARGET" 2>/dev/null || true
-                fi
-              done
-            done
-            sleep 3
-          done
-          
-          wait $XB_PID
-          set -o pipefail
-          exit $?
+            DEVELOPMENT_TEAM="" 2>&1
