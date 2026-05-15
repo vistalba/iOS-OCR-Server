@@ -1,0 +1,60 @@
+name: Build Simulator
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          ls /Applications | grep Xcode
+          sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.app || true
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Show build settings
+        run: |
+          xcodebuild -showBuildSettings \
+            -project OcrServer.xcodeproj \
+            -scheme OcrServer \
+            -sdk iphonesimulator 2>&1 | head -40
+
+      - name: Resolve SPM dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project OcrServer.xcodeproj \
+            -scheme OcrServer \
+            -sdk iphonesimulator \
+            -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache"
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project OcrServer.xcodeproj \
+            -scheme OcrServer \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache" \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" 2>&1
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ~/Library/Logs/DiagnosticReports/
