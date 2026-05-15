@@ -20,28 +20,6 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.3.app || true
 
-      - name: Pre-build swift-log for iOS simulator
-        run: |
-          set -x
-          # Clone swift-log
-          git clone --depth 1 --branch 1.6.4 \
-            https://github.com/apple/swift-log.git /tmp/swift-log
-          
-          # Build Logging module for iOS simulator
-          SDK_PATH=$(xcrun --sdk iphonesimulator --show-sdk-path)
-          swift build \
-            --package-path /tmp/swift-log \
-            -c release \
-            -Xswiftc "-sdk" -Xswiftc "$SDK_PATH" \
-            -Xswiftc "-target" -Xswiftc "arm64-apple-ios18.4-simulator" \
-            --product Logging 2>&1
-
-          # Copy module to a known location
-          mkdir -p /tmp/logging-module
-          cp -R /tmp/swift-log/.build/release/Logging* /tmp/logging-module/ 2>/dev/null || true
-          echo "Contents:"
-          ls -la /tmp/logging-module/
-
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
@@ -49,5 +27,6 @@ jobs:
             -project OcrServer.xcodeproj \
             -target OcrServer \
             -sdk iphonesimulator \
+            OTHER_SWIFT_FLAGS='$(inherited) -I $(BUILD_DIR)/../../../swift-log/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)' \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
