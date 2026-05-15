@@ -23,15 +23,11 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: Prepare and boot simulator
+      - name: Show all destinations for scheme
         run: |
-          RUNTIME=$(xcrun simctl list runtimes | grep 'iOS 18\.5' | head -1 | awk '{print $NF}')
-          echo "Runtime: $RUNTIME"
-          UDID=$(xcrun simctl create "ci-phone" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
-          echo "Created: $UDID"
-          xcrun simctl boot "$UDID"
-          xcrun simctl list devices | grep "$UDID"
-          echo "DEVICE_UDID=$UDID" >> $GITHUB_ENV
+          xcodebuild -showdestinations \
+            -project OcrServer.xcodeproj \
+            -scheme OcrServer 2>&1
 
       - name: Build for iOS Simulator
         run: |
@@ -40,6 +36,6 @@ jobs:
             -project OcrServer.xcodeproj \
             -scheme OcrServer \
             -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,id=${{ env.DEVICE_UDID }}" \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
