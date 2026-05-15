@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		25DD00182E574A5300796897 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 25DD00172E574A5300796897 /* Vapor */; };
+		25DD001B2E57550000796897 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 25DD001A2E57550000796897 /* Logging */; };
 		25DDFFCB2E4F698F00796897 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25DDFFCA2E4F698E00796897 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				25DD00182E574A5300796897 /* Vapor in Frameworks */,
+				25DD001B2E57550000796897 /* Logging in Frameworks */,
 				25DDFFCB2E4F698F00796897 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -82,6 +84,7 @@
 			);
 			name = OcrServer;
 			packageProductDependencies = (
+				25DD001A2E57550000796897 /* Logging */,
 				25DD00172E574A5300796897 /* Vapor */,
 			);
 			productName = OcrServer;
@@ -119,6 +122,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				25DD00162E574A5300796897 /* XCRemoteSwiftPackageReference "vapor" */,
+				25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 25B2C6EE2E3CF13400B4A7C9 /* Products */;
@@ -368,6 +372,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.3;
+			};
+		};
 		25DD00162E574A5300796897 /* XCRemoteSwiftPackageReference "vapor" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/vapor/vapor.git";
@@ -379,6 +391,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		25DD001A2E57550000796897 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = "Logging";
+		};
 		25DD00172E574A5300796897 /* Vapor */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 25DD00162E574A5300796897 /* XCRemoteSwiftPackageReference "vapor" */;
