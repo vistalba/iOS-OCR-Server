@@ -40,17 +40,21 @@ jobs:
             -sdk iphonesimulator \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache"
 
-      - name: List available simulators
-        run: xcrun simctl list devices available 2>&1 | head -20
+      - name: List available runtimes and simulators
+        run: |
+          echo "=== Xcode runtimes ==="
+          xcrun xcodebuild -downloadPlatform iOS Simulator -list 2>&1 || true
+          echo "=== Simulators ==="
+          xcrun simctl list runtimes 2>&1
+          xcrun simctl list devices available 2>&1
 
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -scheme OcrServer \
+            -target OcrServer \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
             -clonedSourcePackagesDirPath "${{ runner.temp }}/spm-cache" \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
