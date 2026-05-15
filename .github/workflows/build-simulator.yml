@@ -1,4 +1,4 @@
-name: Build Simulator
+﻿name: Build Simulator
 
 on:
   push:
@@ -25,13 +25,20 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: List available simulators
+        run: |
+          echo "=== Runtimes ==="
+          xcrun simctl list runtimes
+          echo "=== Devices ==="
+          xcrun simctl list devices available
+
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
           xcodebuild build \
             -project OcrServer.xcodeproj \
-            -target OcrServer \
+            -scheme OcrServer \
+            -configuration Debug \
             -sdk iphonesimulator \
-            -parallelizeTargets NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" 2>&1
