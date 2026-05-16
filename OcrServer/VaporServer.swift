@@ -313,6 +313,9 @@ actor VaporServer {
                 return Self.htmlResponse(html)
             }
         }
+
+        // LLM routes
+        try routesLLM(app)
     }
 
     // MARK: - Helpers
@@ -341,6 +344,13 @@ actor VaporServer {
         let res = Response(status: status)
         try res.content.encode(payload, as: .json)
         return res
+    }
+
+    static func jsonResponse(_ status: HTTPResponseStatus, _ dict: [String: Any]) throws -> Response {
+        let data = try JSONSerialization.data(withJSONObject: dict)
+        var headers = HTTPHeaders()
+        headers.add(name: .contentType, value: "application/json; charset=utf-8")
+        return Response(status: status, headers: headers, body: .init(data: data))
     }
 }
 

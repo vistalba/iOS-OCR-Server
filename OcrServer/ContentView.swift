@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var showingMonitor = false
     @State private var showingDonation = false
+    @State private var showingLLM = false
     
     var body: some View {
         VStack {
@@ -95,24 +96,34 @@ struct ContentView: View {
             alignment: .topLeading
         )
         .overlay(
-            HStack {
-                Button(action: openMonitor) {
-                    Image(systemName: "waveform.path.ecg.rectangle")
-                        .font(.title2)
-                        .foregroundColor(.white)
+            VStack(spacing: 12) {
+                HStack {
+                    Button(action: openMonitor) {
+                        Image(systemName: "waveform.path.ecg.rectangle")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                    }
+                    Button(action: openSettings) {
+                        Image(systemName: "gearshape")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                    }
                 }
-                .padding(.top, 24)
-                .padding(.leading, 20)
-                .padding(.trailing, 12)
-                
-                Button(action: openSettings) {
-                    Image(systemName: "gearshape")
-                        .font(.title2)
-                        .foregroundColor(.white)
+                Button(action: openLLM) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "brain.head.profile")
+                            .font(.title2)
+                        if LLMManager.shared.isModelLoaded {
+                            Circle().fill(.green).frame(width: 8, height: 8)
+                        }
+                    }
+                    .foregroundColor(.white)
                 }
-                .padding(.top, 24)
-                .padding(.trailing, 20)
-            },
+            }
+            .padding(.top, 24)
+            .padding(.trailing, 20),
+            alignment: .topTrailing
+        )
             alignment: .topTrailing
         )
         .sheet(isPresented: $showingReadme) {
@@ -127,6 +138,9 @@ struct ContentView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView(serverManager: serverManager)
         }
+        .sheet(isPresented: $showingLLM) {
+            LLMSettingsView()
+        }
     }
     
     private func openDonation() {
@@ -136,7 +150,11 @@ struct ContentView: View {
     private func openMonitor()  {
         showingMonitor = true
     }
-    
+
+    private func openLLM() {
+        showingLLM = true
+    }
+
     private func openSettings()  {
         showingSettings = true
     }
