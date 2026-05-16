@@ -2,10 +2,9 @@ import Vapor
 
 extension VaporServer {
     func routesLLM(_ app: Application) throws {
-        let llmManager = LLMManager.shared
-
-        app.get("v1", "models") { [self] req async throws -> Response in
-            let models: [[String: Any]] = await llmManager.availableModels.map { url in
+        app.get("v1", "models") { req async throws -> Response in
+            let manager = await LLMManager.shared
+            let models: [[String: Any]] = await manager.availableModels.map { url in
                 [
                     "id": url.lastPathComponent,
                     "object": "model",
@@ -16,7 +15,8 @@ extension VaporServer {
             return try Self.jsonResponse(.ok, ["object": "list", "data": models])
         }
 
-        app.on(.POST, "v1", "chat", "completions", body: .collect(maxSize: "10mb")) { [self] req async throws -> Response in
+        app.on(.POST, "v1", "chat", "completions", body: .collect(maxSize: "10mb")) { req async throws -> Response in
+            let manager = await LLMManager.shared
             struct ChatRequest: Content {
                 var model: String?
                 var messages: [ChatMessage]?
@@ -32,13 +32,15 @@ extension VaporServer {
             guard let chatRequest = try? req.content.decode(ChatRequest.self) else {
                 return try Self.jsonResponse(.badRequest, ["error": "Invalid request body"])
             }
-            guard await llmManager.isModelLoaded else {
+            guard await manager.isModelLoaded else {
                 return try Self.jsonResponse(.badRequest, ["error": "No model loaded. Load a model first."])
             }
 
             let prompt = chatRequest.messages?.map { "\($0.role): \($0.content)" }.joined(separator: "\n") ?? ""
-            let maxT = Int32(chatRequest.maxTokens ?? Int(await llmManager.maxTokens))
-            let temp = Float(chatRequest.temperature ?? Double(await llmManager.temperature))
+            let defaultMaxTokens = await manager.maxTokens
+            let defaultTemp = await manager.temperature
+            let maxT = Int32(chatRequest.maxTokens ?? Int(defaultMaxTokens))
+            let temp = Float(chatRequest.temperature ?? Double(defaultTemp))
 
             if chatRequest.stream == true {
                 return try await self.handleStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: true)
@@ -47,7 +49,8 @@ extension VaporServer {
             }
         }
 
-        app.on(.POST, "v1", "completions", body: .collect(maxSize: "10mb")) { [self] req async throws -> Response in
+        app.on(.POST, "v1", "completions", body: .collect(maxSize: "10mb")) { req async throws -> Response in
+            let manager = await LLMManager.shared
             struct CompletionRequest: Content {
                 var model: String?
                 var prompt: String?
@@ -59,13 +62,15 @@ extension VaporServer {
             guard let compRequest = try? req.content.decode(CompletionRequest.self) else {
                 return try Self.jsonResponse(.badRequest, ["error": "Invalid request body"])
             }
-            guard await llmManager.isModelLoaded else {
+            guard await manager.isModelLoaded else {
                 return try Self.jsonResponse(.badRequest, ["error": "No model loaded"])
             }
 
             let prompt = compRequest.prompt ?? ""
-            let maxT = Int32(compRequest.maxTokens ?? Int(await llmManager.maxTokens))
-            let temp = Float(compRequest.temperature ?? Double(await llmManager.temperature))
+            let defaultMaxTokens = await manager.maxTokens
+            let defaultTemp = await manager.temperature
+            let maxT = Int32(compRequest.maxTokens ?? Int(defaultMaxTokens))
+            let temp = Float(compRequest.temperature ?? Double(defaultTemp))
 
             if compRequest.stream == true {
                 return try await self.handleStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: false)
