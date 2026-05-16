@@ -21,12 +21,14 @@ extension VaporServer {
                 return try Self.jsonResponse(.badRequest, ["error": "No model loaded. Load a model first."])
             }
             let prompt = chatRequest.messages?.map { "\($0.role): \($0.content)" }.joined(separator: "\n") ?? ""
-            let maxT = Int32(chatRequest.maxTokens ?? Int(await manager.maxTokens))
-            let temp = Float(chatRequest.temperature ?? Double(await manager.temperature))
+            let defaultMaxTokens = await manager.maxTokens
+            let defaultTemp = await manager.temperature
+            let maxT = Int32(chatRequest.maxTokens ?? Int(defaultMaxTokens))
+            let temp = Float(chatRequest.temperature ?? Double(defaultTemp))
             if chatRequest.stream == true {
-                return try await handleStreaming(prompt: prompt, isChat: true)
+                return try await self.handleStreaming(prompt: prompt, isChat: true)
             } else {
-                return try await handleNonStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: true)
+                return try await self.handleNonStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: true)
             }
         }
 
@@ -40,12 +42,14 @@ extension VaporServer {
                 return try Self.jsonResponse(.badRequest, ["error": "No model loaded"])
             }
             let prompt = compRequest.prompt ?? ""
-            let maxT = Int32(compRequest.maxTokens ?? Int(await manager.maxTokens))
-            let temp = Float(compRequest.temperature ?? Double(await manager.temperature))
+            let defaultMaxTokens = await manager.maxTokens
+            let defaultTemp = await manager.temperature
+            let maxT = Int32(compRequest.maxTokens ?? Int(defaultMaxTokens))
+            let temp = Float(compRequest.temperature ?? Double(defaultTemp))
             if compRequest.stream == true {
-                return try await handleStreaming(prompt: prompt, isChat: false)
+                return try await self.handleStreaming(prompt: prompt, isChat: false)
             } else {
-                return try await handleNonStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: false)
+                return try await self.handleNonStreaming(prompt: prompt, maxTokens: maxT, temperature: temp, isChat: false)
             }
         }
     }
