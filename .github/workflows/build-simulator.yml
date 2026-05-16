@@ -33,4 +33,5 @@ jobs:
             -scheme OcrServer \
             -sdk iphonesimulator \
             CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" 2>&1
+            DEVELOPMENT_TEAM="" \
+            ASSETCATALOG_COMPILER_OPTIMIZATION=time 2>&1
