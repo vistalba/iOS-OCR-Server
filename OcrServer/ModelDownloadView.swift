@@ -82,7 +82,8 @@ struct ModelDownloadView: View {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
 
         Task {
-            for await progress in downloader.downloadModel(model, to: docs) {
+            let downloader = HuggingFaceDownloader()
+            for await progress in await downloader.downloadModel(model, to: docs) {
                 downloadProgress = progress.fraction
                 statusMessage = "\(Int(progress.fraction * 100))% - \(progress.speed)"
             }
