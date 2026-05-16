@@ -124,8 +124,6 @@ struct ContentView: View {
             .padding(.trailing, 20),
             alignment: .topTrailing
         )
-            alignment: .topTrailing
-        )
         .sheet(isPresented: $showingReadme) {
             ReadmeView()
         }

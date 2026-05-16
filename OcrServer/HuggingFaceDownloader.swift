@@ -63,7 +63,7 @@ actor HuggingFaceDownloader {
         return repo.siblings?
             .filter { $0.rfilename.hasSuffix(".gguf") }
             .map { sibling in
-                let size = repo.siblingSize?[sibling.rfilename] ?? 0
+                let size = repo.siblingsSize?[sibling.rfilename] ?? 0
                 let qType = extractQuantization(from: sibling.rfilename)
                 return ModelInfo(
                     id: "\(repoId)/\(sibling.rfilename)",
