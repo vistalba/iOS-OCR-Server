@@ -34,4 +34,5 @@ jobs:
             -sdk iphonesimulator \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
-            ASSETCATALOG_COMPILER_OPTIMIZATION=time 2>&1
+            ASSETCATALOG_COMPILER_OPTIMIZATION=time \
+            ASSETCATALOG_COMPILER_APPICON_NAME="" 2>&1
