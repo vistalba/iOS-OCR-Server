@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		25DD00182E574A5300796897 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 25DD00172E574A5300796897 /* Vapor */; };
 		25DD001B2E57550000796897 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 25DD001A2E57550000796897 /* Logging */; };
+		25DD001F2E57550000796897 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 25DD001D2E57550000796897 /* LlamaSwift */; };
 		25DDFFCB2E4F698F00796897 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25DDFFCA2E4F698E00796897 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +33,7 @@
 			files = (
 				25DD00182E574A5300796897 /* Vapor in Frameworks */,
 				25DD001B2E57550000796897 /* Logging in Frameworks */,
+				25DD001F2E57550000796897 /* LlamaSwift in Frameworks */,
 				25DDFFCB2E4F698F00796897 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,6 +87,7 @@
 			name = OcrServer;
 			packageProductDependencies = (
 				25DD001A2E57550000796897 /* Logging */,
+				25DD001D2E57550000796897 /* LlamaSwift */,
 				25DD00172E574A5300796897 /* Vapor */,
 			);
 			productName = OcrServer;
@@ -122,6 +125,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				25DD00162E574A5300796897 /* XCRemoteSwiftPackageReference "vapor" */,
+				25DD001C2E57550000796897 /* XCRemoteSwiftPackageReference "llama-swift" */,
 				25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -372,6 +376,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		25DD001C2E57550000796897 /* XCRemoteSwiftPackageReference "llama-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9106.0;
+			};
+		};
 		25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-log.git";
@@ -391,6 +403,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		25DD001D2E57550000796897 /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 25DD001C2E57550000796897 /* XCRemoteSwiftPackageReference "llama-swift" */;
+			productName = "LlamaSwift";
+		};
 		25DD001A2E57550000796897 /* Logging */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 25DD00192E57550000796897 /* XCRemoteSwiftPackageReference "swift-log" */;
