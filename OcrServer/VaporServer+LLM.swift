@@ -77,7 +77,7 @@ extension VaporServer {
             Task {
                 let manager = await LLMManager.shared
                 let modelName = await manager.selectedModelPath?.lastPathComponent ?? "unknown"
-                let stream = manager.generateStream(prompt: prompt)
+                let stream = await manager.generateStream(prompt: prompt)
                 do {
                     for try await text in stream {
                         let chunk: [String: Any] = [

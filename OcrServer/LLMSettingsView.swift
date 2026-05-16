@@ -20,7 +20,7 @@ struct LLMSettingsView: View {
                             Text("Model loaded")
                             Spacer()
                             Button("Unload") {
-                                manager.unloadModel()
+                                Task { await manager.unloadModel() }
                             }
                             .foregroundColor(.red)
                         }

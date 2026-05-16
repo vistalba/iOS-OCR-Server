@@ -71,8 +71,8 @@ final class LLMManager: ObservableObject {
         try await loadModel(path: path)
     }
 
-    func unloadModel() {
-        engine.unloadModel()
+    func unloadModel() async {
+        await engine.unloadModel()
         isModelLoaded = false
         status = "model unloaded"
         selectedModelPath = nil
@@ -90,9 +90,9 @@ final class LLMManager: ObservableObject {
         return result.text
     }
 
-    func generateStream(prompt: String) -> AsyncThrowingStream<String, Error> {
+    func generateStream(prompt: String) async -> AsyncThrowingStream<String, Error> {
         status = "streaming..."
-        return engine.generateStream(
+        return await engine.generateStream(
             prompt: prompt,
             maxTokens: maxTokens,
             temperature: temperature,
